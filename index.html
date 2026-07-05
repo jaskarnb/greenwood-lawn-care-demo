@@ -64,12 +64,24 @@ footer{padding:36px 24px;text-align:center;color:var(--muted);font-size:.85rem}
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.hero-bg{animation:none}.reveal{opacity:1;transform:none;transition:none}}
+
+/* --- self-service quote form --- */
+.sf-form{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px;text-align:left}
+.sf-form label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92rem}
+.sf-hint{font-weight:400;color:var(--muted)}
+.sf-form input,.sf-form select,.sf-form textarea{padding:12px 14px;border:1px solid #eae5d6;border-radius:12px;font:inherit;width:100%;background:#fff;box-sizing:border-box}
+.sf-form input:focus,.sf-form select:focus,.sf-form textarea:focus{outline:2px solid var(--green);border-color:transparent}
+.sf-form .btn{border:0;cursor:pointer;font-family:inherit}
+.sf-form .btn:disabled{opacity:.6;cursor:wait}
+.sf-status{min-height:1.4em;margin:0;font-weight:600;text-align:center}
+.sf-status.ok{color:var(--green)}
+.sf-status.err{color:#b3261e}
 </style>
 </head>
 <body>
 <nav><div class="nav-in">
 <div class="logo">Greenwood <span>Lawn Care</span></div>
-<a class="call-btn" href="tel:3173744681">📞 (317) 374-4681</a>
+<a class="call-btn" href="#contact">💬 Get a Free Quote</a>
 </div></nav>
 
 <header>
@@ -79,7 +91,7 @@ footer{padding:36px 24px;text-align:center;color:var(--muted);font-size:.85rem}
 <h1>Your lawn, looking like the best one on the block.</h1>
 <p>Professional mowing, landscaping, and year-round yard care for Greenwood and the southside — at prices that make sense.</p>
 <div class="btn-row">
-<a class="btn btn-lime" href="tel:3173744681">Get a Free Quote</a>
+<a class="btn btn-lime" href="#contact">Get a Free Quote</a>
 <a class="btn btn-ghost" href="#services">See Services</a>
 </div>
 </div></div>
@@ -134,13 +146,47 @@ footer{padding:36px 24px;text-align:center;color:var(--muted);font-size:.85rem}
 <section>
 <div class="cta reveal">
 <h2>Ready for a better-looking lawn?</h2>
-<p>Call or text today for a fast, free quote. No contracts required.</p>
-<a class="btn btn-lime" href="tel:3173744681">Call (317) 374-4681</a>
+<p>Fill out the quick form and get your quote by text. No contracts required.</p>
+<a class="btn btn-lime" href="#contact">Get My Free Quote</a>
 <div class="contact-line">
 <span>📧 timac0073@yahoo.com</span>
 <span>📍 Greenwood, IN</span>
 <span>🕗 Mon–Sat</span>
 </div>
+</div>
+</section>
+
+
+<section id="contact">
+<div class="wrap center">
+<span class="kicker">Get Started</span>
+<h2>Get your free quote by text</h2>
+<p class="sub">Tell us about your yard — you'll get a text back within 30 seconds with available times. No phone call needed.</p>
+<form class="sf-form" data-client="greenwood-lawn-care" data-endpoint="https://selfserve-funnel.jaskarnb123.workers.dev/form-webhook" novalidate>
+<label>Name*
+<input type="text" name="name" required autocomplete="name" maxlength="80"></label>
+<label>Phone* <span class="sf-hint">(we'll text you here)</span>
+<input type="tel" name="phone" required autocomplete="tel" placeholder="(317) 555-0100" maxlength="20"></label>
+<label>Email <span class="sf-hint">(optional)</span>
+<input type="email" name="email" autocomplete="email" maxlength="120"></label>
+<label>Service*
+<select name="service" required>
+<option value="" disabled selected>Choose a service...</option>
+<option>Lawn mowing</option>
+<option>Landscaping & mulch</option>
+<option>Shrub trimming</option>
+<option>Seasonal cleanup</option>
+<option>Leaf removal</option>
+<option>Aeration</option>
+<option>Something else</option>
+</select></label>
+<label>When works best? <span class="sf-hint">(optional)</span>
+<input type="text" name="preference" placeholder="e.g. weekday afternoons" maxlength="200"></label>
+<label>Anything we should know? <span class="sf-hint">(optional)</span>
+<textarea name="details" rows="3" maxlength="500"></textarea></label>
+<button type="submit" class="btn btn-lime">Text Me My Quote</button>
+<p class="sf-status" role="status" aria-live="polite"></p>
+</form>
 </div>
 </section>
 
@@ -155,6 +201,29 @@ document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
 const cobs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const el=e.target,t=+el.dataset.count,d=1400,s=performance.now();
 const step=n=>{const p=Math.min((n-s)/d,1);el.textContent=Math.floor(p*t)+(p===1&&t===100?'%':'');if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step);cobs.unobserve(el)}}),{threshold:.6});
 document.querySelectorAll('[data-count]').forEach(el=>cobs.observe(el));
+</script>
+
+<script>
+(function(){
+var form=document.querySelector(".sf-form");if(!form)return;
+var statusEl=form.querySelector(".sf-status"),btn=form.querySelector("button[type=submit]");
+function setStatus(m,c){statusEl.textContent=m;statusEl.className="sf-status "+(c||"")}
+function validPhone(v){var d=(v||"").replace(/\D/g,"");return d.length===10||(d.length===11&&d.charAt(0)==="1")}
+form.addEventListener("submit",async function(e){
+e.preventDefault();
+var data=Object.fromEntries(new FormData(form).entries());
+data.client=form.dataset.client;
+if(!data.name||!data.service){setStatus("Please fill in the required fields.","err");return}
+if(!validPhone(data.phone)){setStatus("Please enter a valid 10-digit phone number.","err");return}
+btn.disabled=true;setStatus("Sending...");
+try{
+var res=await fetch(form.dataset.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+if(!res.ok)throw new Error("bad response");
+form.reset();setStatus("Done! You'll get a text from us in about 30 seconds.","ok");
+}catch(err){setStatus("Something went wrong - reach us at (317) 374-4681.","err")}
+finally{btn.disabled=false}
+});
+})();
 </script>
 </body>
 </html>
